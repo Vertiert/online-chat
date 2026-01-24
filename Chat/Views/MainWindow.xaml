@@ -1,0 +1,602 @@
+﻿<Window x:Class="ChatApp.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:helpers="clr-namespace:ChatApp.Helpers"
+        Title="ChatApp" Height="700" Width="1000"
+        WindowStartupLocation="CenterScreen" MinHeight="600" MinWidth="800"
+        x:Name="MainWindowRoot">
+
+    <Window.Resources>
+        <!-- Конвертеры -->
+        <helpers:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <helpers:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <helpers:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
+
+        <!-- Стиль для выделенного контакта (используем триггеры) -->
+        <Style x:Key="ContactItemStyle" TargetType="Border">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="3"/>
+            <Setter Property="Margin" Value="2,1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                    <Setter Property="Background" Value="#E8F4FD"/>
+                    <Setter Property="BorderBrush" Value="#0078D7"/>
+                    <Setter Property="BorderThickness" Value="1"/>
+                </DataTrigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F0F8FF"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Стиль для своих сообщений (справа) -->
+        <Style x:Key="MyMessageStyle" TargetType="Border">
+            <Setter Property="Background" Value="#dcf8c6"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Margin" Value="5,5,10,5"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="MaxWidth" Value="400"/>
+        </Style>
+
+        <!-- Стиль для чужих сообщений (слева) -->
+        <Style x:Key="OtherMessageStyle" TargetType="Border">
+            <Setter Property="Background" Value="#e6f3ff"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Margin" Value="10,5,5,5"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="MaxWidth" Value="400"/>
+        </Style>
+
+        <!-- Стиль для файловых сообщений -->
+        <Style x:Key="FileMessageStyle" TargetType="Border">
+            <Setter Property="Background" Value="#dcf8c6"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Margin" Value="5,5,10,5"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="MaxWidth" Value="400"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="ToolTip" Value="Кликните для скачивания файла"/>
+        </Style>
+
+        <!-- Стиль для файловых сообщений собеседника -->
+        <Style x:Key="OtherFileMessageStyle" TargetType="Border">
+            <Setter Property="Background" Value="#e6f3ff"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Margin" Value="10,5,5,5"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="MaxWidth" Value="400"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="ToolTip" Value="Кликните для скачивания файла"/>
+        </Style>
+
+        <!-- DataTemplate для сообщений -->
+        <DataTemplate x:Key="MessageTemplate">
+            <Border Style="{Binding MessageStyle}"
+                    MouseLeftButtonDown="MessageBorder_MouseLeftButtonDown"
+                    Tag="{Binding}">
+
+                <!-- Контекстное меню для сообщений -->
+                <Border.ContextMenu>
+                    <ContextMenu>
+                        <!-- Для своих НЕ удаленных сообщений -->
+                        <MenuItem Header="Редактировать" 
+                                  Click="EditMessageMenuItem_Click"
+                                  Visibility="{Binding IsMyMessage, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <MenuItem.Style>
+                                <Style TargetType="MenuItem">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDeleted}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsFile}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </MenuItem.Style>
+                        </MenuItem>
+
+                        <MenuItem Header="Удалить" 
+                                  Click="DeleteMessageMenuItem_Click"
+                                  Visibility="{Binding IsMyMessage, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <MenuItem.Style>
+                                <Style TargetType="MenuItem">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDeleted}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </MenuItem.Style>
+                        </MenuItem>
+
+                        <!-- Для всех НЕ удаленных сообщений -->
+                        <MenuItem Header="Копировать текст" 
+                                  Click="CopyMessageMenuItem_Click">
+                            <MenuItem.Style>
+                                <Style TargetType="MenuItem">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDeleted}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsFile}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </MenuItem.Style>
+                        </MenuItem>
+
+                        <MenuItem Header="Восстановить" 
+                                  Click="RestoreMessageMenuItem_Click"
+                                  Visibility="{Binding IsMyMessage, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <MenuItem.Style>
+                                <Style TargetType="MenuItem">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDeleted}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </MenuItem.Style>
+                        </MenuItem>
+                    </ContextMenu>
+                </Border.ContextMenu>
+
+                <StackPanel>
+                    <!-- Имя отправителя -->
+                    <TextBlock Text="{Binding SenderName}" 
+                               FontWeight="Bold" 
+                               Visibility="{Binding ShowSenderName}"/>
+
+                    <!-- Содержимое сообщения -->
+                    <StackPanel>
+                        <!-- Если файл -->
+                        <StackPanel Orientation="Horizontal" 
+                                    Visibility="{Binding IsFile, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="📎" FontSize="16" VerticalAlignment="Center"/>
+                            <StackPanel Margin="5,0,0,0">
+                                <TextBlock Text="{Binding FileName}" 
+                                           FontSize="14" 
+                                           TextWrapping="Wrap"
+                                           Foreground="{Binding DeletedColor}"
+                                           FontStyle="{Binding DeletedFontStyle}"/>
+                                <TextBlock Text="{Binding FileSize}" 
+                                           FontSize="10" 
+                                           Foreground="Gray"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Если текст -->
+                        <TextBlock Text="{Binding DisplayContent}" 
+                                   TextWrapping="Wrap" 
+                                   FontSize="14"
+                                   Foreground="{Binding DeletedColor}"
+                                   FontStyle="{Binding DeletedFontStyle}"
+                                   Visibility="{Binding IsFile, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                    </StackPanel>
+
+                    <!-- Время отправки и статус -->
+                    <StackPanel Orientation="Horizontal" 
+                                HorizontalAlignment="Right" 
+                                Margin="0,5,0,0">
+                        <!-- Время -->
+                        <TextBlock Text="{Binding Time}" 
+                                   FontSize="10" 
+                                   Foreground="{Binding DeletedColor}"/>
+
+                        <!-- Статус доставки -->
+                        <TextBlock Text="{Binding StatusSymbol}" 
+                                   FontSize="10" 
+                                   Margin="5,0,0,0"
+                                   Foreground="{Binding StatusColor}"
+                                   Visibility="{Binding ShowStatus}"/>
+
+                        <!-- Отметка об изменении -->
+                        <TextBlock Text="{Binding EditedInfo}" 
+                                   FontSize="9" 
+                                   Margin="5,0,0,0"
+                                   Foreground="Gray"
+                                   FontStyle="Italic"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <!-- DataTemplate для контактов -->
+        <DataTemplate x:Key="ContactTemplate">
+            <Border Style="{StaticResource ContactItemStyle}"
+                    Tag="{Binding}"
+                    MouseDown="ContactBorder_MouseDown">
+                <StackPanel Orientation="Horizontal" Margin="5">
+                    <!-- Аватар с индикатором статуса -->
+                    <Grid Width="40" Height="40">
+                        <Ellipse Stroke="Gray" StrokeThickness="1">
+                            <Ellipse.Fill>
+                                <ImageBrush ImageSource="{Binding AvatarImage}" Stretch="UniformToFill"/>
+                            </Ellipse.Fill>
+                        </Ellipse>
+
+                        <!-- Индикатор статуса (круг в правом нижнем углу) -->
+                        <Ellipse Width="12" Height="12" 
+                                 HorizontalAlignment="Right" 
+                                 VerticalAlignment="Bottom"
+                                 Stroke="White" 
+                                 StrokeThickness="1.5"
+                                 Fill="{Binding StatusColor}">
+                            <Ellipse.RenderTransform>
+                                <TranslateTransform X="4" Y="4"/>
+                            </Ellipse.RenderTransform>
+                        </Ellipse>
+                    </Grid>
+
+                    <!-- Информация о контакте -->
+                    <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Username}" 
+                                   FontWeight="Bold" 
+                                   Foreground="#333"
+                                   TextTrimming="CharacterEllipsis"
+                                   MaxWidth="120"/>
+                        <TextBlock Text="{Binding StatusText}" 
+                                   FontSize="10" 
+                                   Foreground="Gray"/>
+
+                        <!-- Последнее сообщение -->
+                        <TextBlock Text="{Binding LastMessagePreview}" 
+                                   FontSize="10" 
+                                   Foreground="#666"
+                                   TextTrimming="CharacterEllipsis"
+                                   MaxWidth="130"/>
+                    </StackPanel>
+
+                    <!-- Количество непрочитанных сообщений -->
+                    <Border Background="#0084ff" 
+                            Width="20" Height="20" 
+                            CornerRadius="10"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Margin="5,0,0,0"
+                            Visibility="{Binding UnreadCountVisibility}">
+                        <TextBlock Text="{Binding UnreadCount}" 
+                                   Foreground="White" 
+                                   FontSize="10"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   FontWeight="Bold"/>
+                    </Border>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Меню -->
+        <Menu Grid.Row="0" Background="#f0f2f5">
+            <MenuItem Header="Файл">
+                <MenuItem Header="Профиль" Click="ProfileMenuItem_Click"/>
+                <Separator/>
+                <MenuItem Header="Выход" Click="ExitMenuItem_Click"/>
+            </MenuItem>
+            <MenuItem Header="Настройки">
+                <MenuItem Header="Уведомления" Click="NotificationsMenuItem_Click"/>
+                <MenuItem Header="Смена пароля" Click="ChangePasswordMenuItem_Click"/>
+                <MenuItem Header="Смена email" Click="ChangeEmailMenuItem_Click"/>
+            </MenuItem>
+            <MenuItem Header="Контакты">
+                <MenuItem Header="Обновить список" Click="RefreshContactsMenuItem_Click"/>
+                <MenuItem Header="Удалить контакт" Click="RemoveContactMenuItem_Click"/>
+            </MenuItem>
+        </Menu>
+
+        <!-- Основное содержимое -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="250"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Левая панель: контакты -->
+            <Border Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,0" Background="White">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Поиск -->
+                        <TextBox x:Name="SearchTextBox" Grid.Column="0" Margin="5" Height="40" 
+                                 Padding="5"
+                                 VerticalContentAlignment="Center"
+                                 TextChanged="SearchTextBox_TextChanged">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="TextBox">
+                                                <Border Background="#F0F2F5" CornerRadius="5" Padding="5">
+                                                    <Grid>
+                                                        <ScrollViewer x:Name="PART_ContentHost" 
+                                                                      VerticalAlignment="Center"/>
+                                                        <TextBlock Text="Поиск контактов..." 
+                                                                   Foreground="Gray" 
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="5,0,0,0"
+                                                                   Visibility="Collapsed"/>
+                                                    </Grid>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="Text" Value="">
+                                                        <Setter TargetName="PART_ContentHost" Property="Visibility" Value="Collapsed"/>
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </Trigger>
+                                                    <Trigger Property="Text" Value="{x:Null}">
+                                                        <Setter TargetName="PART_ContentHost" Property="Visibility" Value="Collapsed"/>
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
+
+                        <!-- Кнопка добавления контакта -->
+                        <Button x:Name="AddContactButton" Grid.Column="1" 
+                                Content="+" 
+                                Width="30" Height="40" 
+                                Margin="0,5,5,5" 
+                                FontSize="16" FontWeight="Bold"
+                                ToolTip="Добавить контакт"
+                                Click="AddContactButton_Click"
+                                Background="#0078D7" 
+                                Foreground="White"
+                                BorderThickness="0"
+                                Cursor="Hand">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}" 
+                                                        CornerRadius="5">
+                                                    <ContentPresenter HorizontalAlignment="Center" 
+                                                                      VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#005A9E"/>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter Property="Background" Value="#004578"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </Grid>
+
+                    <!-- Список контактов -->
+                    <ScrollViewer Grid.Row="1" 
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <ItemsControl x:Name="ContactsItemsControl"
+                                      ItemTemplate="{StaticResource ContactTemplate}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+
+            <!-- Правая панель: чат -->
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Информация о контакте -->
+                <Border Grid.Row="0" Background="#f0f2f5" Padding="10">
+                    <StackPanel Orientation="Horizontal">
+                        <!-- Аватар выбранного контакта с индикатором статуса -->
+                        <Grid Width="40" Height="40">
+                            <Ellipse Stroke="Gray" StrokeThickness="1">
+                                <Ellipse.Fill>
+                                    <ImageBrush x:Name="SelectedContactAvatar" Stretch="UniformToFill"/>
+                                </Ellipse.Fill>
+                            </Ellipse>
+
+                            <!-- Индикатор статуса для выбранного контакта -->
+                            <Ellipse x:Name="SelectedContactStatusCircle" 
+                                     Width="12" Height="12" 
+                                     HorizontalAlignment="Right" 
+                                     VerticalAlignment="Bottom"
+                                     Stroke="White" 
+                                     StrokeThickness="1.5"
+                                     Fill="Transparent">
+                                <Ellipse.RenderTransform>
+                                    <TranslateTransform X="4" Y="4"/>
+                                </Ellipse.RenderTransform>
+                            </Ellipse>
+                        </Grid>
+
+                        <!-- Имя и статус -->
+                        <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                            <TextBlock x:Name="SelectedContactName" 
+                                       Text="Выберите контакт для общения"
+                                       FontWeight="Bold" 
+                                       FontSize="14"/>
+                            <TextBlock x:Name="SelectedContactStatus" 
+                                       Text="" 
+                                       FontSize="11" 
+                                       Foreground="Gray"/>
+                        </StackPanel>
+
+                        <!-- Индикатор подключения TCP -->
+                        
+                    </StackPanel>
+                </Border>
+
+                <!-- Сообщения -->
+                <ScrollViewer x:Name="MessagesScrollViewer" 
+                              Grid.Row="1" 
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Background="#fafafa"
+                              Padding="10">
+                    <ItemsControl x:Name="MessagesItemsControl" 
+                                  ItemTemplate="{StaticResource MessageTemplate}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel Orientation="Vertical"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <!-- Панель ввода -->
+                <Grid Grid.Row="2" Margin="10" Background="White">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Кнопка прикрепления файла -->
+                    <Button x:Name="AttachFileButton" Grid.Column="0" 
+                            Content="📎" 
+                            Width="40" Height="40" 
+                            Margin="0,0,5,0"
+                            Click="AttachFileButton_Click"
+                            ToolTip="Прикрепить файл"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Cursor="Hand">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="Transparent" CornerRadius="5">
+                                                <ContentPresenter HorizontalAlignment="Center" 
+                                                                  VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#F0F2F5"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <!-- Поле ввода сообщения -->
+                    <Border Grid.Column="1" 
+                            Background="#F0F2F5" 
+                            CornerRadius="20"
+                            Padding="10,5">
+                        <TextBox x:Name="MessageTextBox" 
+                                 Height="30" 
+                                 VerticalContentAlignment="Center"
+                                 AcceptsReturn="True"
+                                 TextChanged="MessageTextBox_TextChanged"
+                                 KeyDown="MessageTextBox_KeyDown"
+                                 BorderThickness="0"
+                                 Background="Transparent"
+                                 FontSize="14">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="TextBox">
+                                                <ScrollViewer x:Name="PART_ContentHost" 
+                                                              VerticalAlignment="Center"/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
+                    </Border>
+
+                    <!-- Кнопка отправки -->
+                    <Button x:Name="SendButton" Grid.Column="2" 
+                            Content="➤" 
+                            Width="40" Height="40" 
+                            Margin="5,0,0,0"
+                            IsEnabled="False" 
+                            Click="SendButton_Click"
+                            ToolTip="Отправить сообщение"
+                            Background="#0084ff"
+                            Foreground="White"
+                            BorderThickness="0"
+                            Cursor="Hand">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}" 
+                                                    CornerRadius="20">
+                                                <ContentPresenter HorizontalAlignment="Center" 
+                                                                  VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsEnabled" Value="False">
+                                        <Setter Property="Background" Value="#CCCCCC"/>
+                                        <Setter Property="Cursor" Value="Arrow"/>
+                                    </Trigger>
+                                    <Trigger Property="IsEnabled" Value="True">
+                                        <Setter Property="Background" Value="#0084ff"/>
+                                    </Trigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#0073e6"/>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter Property="Background" Value="#005bb5"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

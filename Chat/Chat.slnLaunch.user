@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "Новый профиль",
+    "Projects": [
+      {
+        "Path": "Chat.csproj",
+        "Action": "StartWithoutDebugging"
+      },
+      {
+        "Path": "..\\ChatServer\\ChatServer.csproj",
+        "Action": "StartWithoutDebugging"
+      }
+    ]
+  }
+]

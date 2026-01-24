@@ -1,0 +1,53 @@
+﻿<Window x:Class="ChatApp.Views.ProfileWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Профиль" Height="500" Width="400" ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Аватар -->
+        <Grid Grid.Row="0" HorizontalAlignment="Center">
+            <Ellipse Width="100" Height="100" Stroke="Gray" StrokeThickness="2">
+                <Ellipse.Fill>
+                    <ImageBrush x:Name="AvatarImage" Stretch="UniformToFill"/>
+                </Ellipse.Fill>
+            </Ellipse>
+            <Button x:Name="ChangeAvatarBtn" Content="✎" Width="30" Height="30" 
+                    HorizontalAlignment="Right" VerticalAlignment="Bottom" 
+                    Click="ChangeAvatarBtn_Click"/>
+        </Grid>
+
+        <!-- Имя пользователя -->
+        <TextBlock Grid.Row="1" Text="Имя пользователя:" Margin="0,20,0,5"/>
+        <TextBox x:Name="UsernameTextBox" Grid.Row="2" Height="30"/>
+
+        <!-- Статус -->
+        <TextBlock Grid.Row="3" Text="Статус:" Margin="0,10,0,5"/>
+        <ComboBox x:Name="StatusComboBox" Grid.Row="4" Height="30">
+            <ComboBoxItem Content="Онлайн" Tag="online"/>
+            <ComboBoxItem Content="Офлайн" Tag="offline"/>
+            <ComboBoxItem Content="Не беспокоить" Tag="dnd"/>
+        </ComboBox>
+
+        <!-- Био -->
+        <TextBlock Grid.Row="5" Text="О себе:" Margin="0,10,0,5"/>
+        <TextBox x:Name="BioTextBox" Grid.Row="6" Height="60" TextWrapping="Wrap" AcceptsReturn="True"/>
+
+        <!-- Кнопки -->
+        <StackPanel Grid.Row="7" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button x:Name="SaveBtn" Content="Сохранить" Width="80" Height="30" Margin="5" Click="SaveBtn_Click"/>
+            <Button x:Name="CancelBtn" Content="Отмена" Width="80" Height="30" Margin="5" Click="CancelBtn_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

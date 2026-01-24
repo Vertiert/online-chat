@@ -1,0 +1,13 @@
+C:\Users\шон\Desktop\OOP\ChatApp.Notifications\obj\Debug\ChatApp.Notifications.csproj.AssemblyReference.cache
+C:\Users\шон\Desktop\OOP\ChatApp.Notifications\obj\Debug\ChatApp.Notifications.Properties.Resources.resources
+C:\Users\шон\Desktop\OOP\ChatApp.Notifications\obj\Debug\ChatApp.Notifications.csproj.GenerateResource.cache
+C:\Users\шон\Desktop\OOP\ChatApp.Notifications\obj\Debug\ChatApp.Notifications.csproj.CoreCompileInputs.cache
+C:\Users\шон\Desktop\OOP\ChatApp.Notifications\bin\Debug\ChatApp.Notifications.exe.config
+C:\Users\шон\Desktop\OOP\ChatApp.Notifications\bin\Debug\ChatApp.Notifications.exe
+C:\Users\шон\Desktop\OOP\ChatApp.Notifications\bin\Debug\ChatApp.Notifications.pdb
+C:\Users\шон\Desktop\OOP\ChatApp.Notifications\obj\Debug\ChatApp.Notifications.exe
+C:\Users\шон\Desktop\OOP\ChatApp.Notifications\obj\Debug\ChatApp.Notifications.pdb
+C:\Users\шон\Desktop\OOP\ChatApp.Notifications\bin\Debug\Newtonsoft.Json.dll
+C:\Users\шон\Desktop\OOP\ChatApp.Notifications\bin\Debug\Newtonsoft.Json.xml
+C:\Users\шон\Desktop\OOP\ChatApp.Notifications\obj\Debug\ChatApp.Notifications.exe.config
+C:\Users\шон\Desktop\OOP\ChatApp.Notifications\obj\Debug\ChatApp..B8FC5D86.Up2Date
